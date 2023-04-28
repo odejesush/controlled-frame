@@ -35,9 +35,15 @@
       <div class="view-controls">
         <h2>Controls</h2>
 
+        <div id="control-div">
+          <!-- <control-group-element heading="App Controls">
+                    <control-element id="update_sw" label="Update ServiceWorker" buttonText="Update"></control-element>
+                  </control-group-element> -->
+        </div>
+
         <div class="controls">
           <h3>Page Controls</h3>
-          <div class="subcontrols">
+          <div id="page-controls" class="subcontrols">
             <label for="update_sw_btn">Update ServiceWorker</label>
             <button id="update_sw_btn">Update</button>
 
@@ -626,6 +632,8 @@ body {
       </div>
 
       <script type="module" src="/index.js"></script>
+      <script type="module" src="/controlElement.js"></script>
+      <script type="module" src="/controlGroupElement.js"></script>
     </div>
   </div>
 </body>
