@@ -1,4 +1,6 @@
 import { $, Log, textareaExpand, textareaOninputHandler, toggleHide } from './common.js';
+import { ControlElement } from './controlElement.js';
+import { ControlGroupElement } from './controlGroupElement.js';
 
 const DEFAULT_ATTRIBUTES = {
   id: 'view',
@@ -94,6 +96,19 @@ class ControlledFrameController {
 
   // Initializes the <controlledframe> tag attributes with default values.
   #initControlledFrameAttributes() {
+    let controls = new Array();
+    let srcControlElement = new ControlElement({
+      fields: [{ name: 'src', type: 'text', value: DEFAULT_ATTRIBUTES.src}],
+      buttonText: 'Set',
+      handler: this.#setSrc.bind(this)
+    });
+    controls.push(srcControlElement);
+    let controlGroupElement = new ControlGroupElement({
+      heading: 'Tag Attributes',
+      controls: controls
+    });
+    $('#control-div').append(controlGroupElement)
+
     this.#getAttributeValue(
       'partition',
       $('#partition_in'),
@@ -381,7 +396,12 @@ class ControlledFrameController {
   }
 
   // Attribute handlers
-  #setSrc(e) {
+  #setSrc(controlElement) {
+    if (controlElement) {
+      let srcValue = controlElement.GetFieldValue('src');
+      this.NavigateControlledFrame(srcValue);
+      return;
+    }
     let url = $('#src_in').value;
     this.NavigateControlledFrame(url);
   }
