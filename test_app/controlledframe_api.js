@@ -96,42 +96,42 @@ class ControlledFrameController {
 
   // Initializes the <controlledframe> tag attributes with default values.
   #initControlledFrameAttributes() {
-    let controls = new Array();
-    let srcControlElement = new ControlElement({
-      fields: [{ name: 'src', type: 'text', value: DEFAULT_ATTRIBUTES.src}],
-      buttonText: 'Set',
-      handler: this.#setSrc.bind(this)
-    });
-    controls.push(srcControlElement);
+    let controls = [
+      new ControlElement({
+        fields: [{ name: 'allowtransparency', type: 'checkbox', value: DEFAULT_ATTRIBUTES.allowtransparency }],
+        buttonText: 'Set',
+        handler: this.#setAllowtransparency.bind(this)
+      }),
+      new ControlElement({
+        fields: [{ name: 'autosize', type: 'checkbox', value: DEFAULT_ATTRIBUTES.autosize }],
+        buttonText: 'Set',
+        handler: this.#setAutosize.bind(this)
+      }),
+      new ControlElement({
+        fields: [{ name: 'name', type: 'text', value: DEFAULT_ATTRIBUTES.name }],
+        buttonText: 'Set',
+        handler: this.#setName.bind(this)
+      }),
+      new ControlElement({
+        fields: [{ name: 'partition', type: 'text', value: DEFAULT_ATTRIBUTES.partition }],
+        buttonText: 'Set',
+        handler: this.#setPartition.bind(this)
+      }),
+      new ControlElement({
+        fields: [{ name: 'src', type: 'text', value: DEFAULT_ATTRIBUTES.src }],
+        buttonText: 'Set',
+        handler: this.#setSrc.bind(this)
+      }),
+    ];
     let controlGroupElement = new ControlGroupElement({
       heading: 'Tag Attributes',
       controls: controls
     });
     $('#control-div').append(controlGroupElement)
 
-    this.#getAttributeValue(
-      'partition',
-      $('#partition_in'),
-      DEFAULT_ATTRIBUTES.partition
-    );
-    this.#getAttributeValue(
-      'allowtransparency',
-      $('#allowtransparency_chk'),
-      DEFAULT_ATTRIBUTES.allowtransparency
-    );
-    this.#getAttributeValue(
-      'autosize',
-      $('#autosize_chk'),
-      DEFAULT_ATTRIBUTES.autosize
-    );
-    this.#getAttributeValue('name', $('#name_in'), DEFAULT_ATTRIBUTES.name);
-    this.#getAttributeValue('src', $('#src_in'), DEFAULT_ATTRIBUTES.src);
-
-    this.#setPartition();
-    this.#setAllowtransparency();
-    this.#setAutosize();
-    this.#setName();
-    this.#setSrc();
+    for (const control of controls) {
+      control.Submit();
+    }
   }
 
   // Initializes the various inputs and buttons that will be used to test the
@@ -396,32 +396,45 @@ class ControlledFrameController {
   }
 
   // Attribute handlers
-  #setSrc(controlElement) {
-    if (controlElement) {
-      let srcValue = controlElement.GetFieldValue('src');
-      this.NavigateControlledFrame(srcValue);
-      return;
+  #setSrc(controlEl) {
+    if (!controlEl) {
+      controlEl = $('src_control');
     }
-    let url = $('#src_in').value;
-    this.NavigateControlledFrame(url);
+    let src = controlEl.GetFieldValue('src');
+    this.NavigateControlledFrame(src);
+    return;
   }
 
-  #setPartition(e) {
-    this.controlledFrame.partition = $('#partition_in').value;
+  #setPartition(controlEl) {
+    if (!controlEl) {
+      controlEl = $('partition_control');
+    }
+    let partition = controlEl.GetFieldValue('partition');
+    this.controlledFrame.partition = partition;
   }
 
-  #setAllowtransparency(e) {
-    this.controlledFrame.allowtransparency = $('#allowtransparency_chk').checked
-      ? 'on'
-      : '';
+  #setAllowtransparency(controlEl) {
+    if (!controlEl) {
+      controlEl = $('allowtransparency_control');
+    }
+    let allowtransparency = controlEl.GetFieldValue('allowtransparency');
+    this.controlledFrame.allowtransparency = allowtransparency ? 'on' : '';
   }
 
-  #setAutosize(e) {
-    this.controlledFrame.autosize = $('#autosize_chk').checked ? 'on' : '';
+  #setAutosize(controlEl) {
+    if (!controlEl) {
+      controlEl = $('autosize_control');
+    }
+    let autosize = controlEl.GetFieldValue('autosize');
+    this.controlledFrame.autosize = autosize ? 'on' : '';
   }
 
-  #setName(e) {
-    this.controlledFrame.name = $('#name_in').value;
+  #setName(controlEl) {
+    if (!controlEl) {
+      controlEl = $('name_control');
+    }
+    let name = controlEl.GetFieldValue('name');
+    this.controlledFrame.name = name;
   }
 
   // Property handlers

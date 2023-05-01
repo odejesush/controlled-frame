@@ -3,6 +3,7 @@ import { css, LitElement, html } from './lit-all.min.js';
 
 export class ControlElement extends LitElement {
   static properties = {
+    id: '',
     label: '',
     buttonText: '',
   };
@@ -72,6 +73,7 @@ export class ControlElement extends LitElement {
 
   constructor(params = {}) {
     super();
+    this.id = params.label + '_control';
     this.label = params.label;
     this.fields = params.fields;
     this.buttonText = params.buttonText;
@@ -127,15 +129,21 @@ export class ControlElement extends LitElement {
       Log.err(`Handler for ${buttonText} is not set.`);
       return;
     }
-    this.#handler(this);
+    this.Submit();
   }
 
-  GetFieldValue(fieldName) {
+  async GetFieldValue(fieldName) {
+    if (!this.renderRoot) {
+      await this.firstUpdated;
+    }
     return this.renderRoot.querySelector(`#${fieldName}`).value;
   }
 
   SetButtonHandler(handler) {
     this.#handler = handler;
+  }
+  Submit() {
+    this.#handler(this);
   }
 
   #handler = null;
