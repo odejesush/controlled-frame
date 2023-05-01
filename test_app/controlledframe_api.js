@@ -400,41 +400,45 @@ class ControlledFrameController {
     if (!controlEl) {
       controlEl = $('src_control');
     }
-    let src = controlEl.GetFieldValue('src');
-    this.NavigateControlledFrame(src);
-    return;
+    controlEl.GetFieldValue('src').then(src => {
+      this.NavigateControlledFrame(src);
+    });
   }
 
   #setPartition(controlEl) {
     if (!controlEl) {
       controlEl = $('partition_control');
     }
-    let partition = controlEl.GetFieldValue('partition');
-    this.controlledFrame.partition = partition;
+    controlEl.GetFieldValue('partition').then(partition => {
+      this.controlledFrame.partition = partition;
+    });
   }
 
   #setAllowtransparency(controlEl) {
     if (!controlEl) {
       controlEl = $('allowtransparency_control');
     }
-    let allowtransparency = controlEl.GetFieldValue('allowtransparency');
-    this.controlledFrame.allowtransparency = allowtransparency ? 'on' : '';
+    controlEl.GetFieldValue('allowtransparency').then(allowtransparency => {
+      this.controlledFrame.allowtransparency = allowtransparency ? 'on' : '';
+    });
   }
 
   #setAutosize(controlEl) {
     if (!controlEl) {
       controlEl = $('autosize_control');
     }
-    let autosize = controlEl.GetFieldValue('autosize');
-    this.controlledFrame.autosize = autosize ? 'on' : '';
+    controlEl.GetFieldValue('autosize').then(autosize => {
+      this.controlledFrame.autosize = autosize ? 'on' : '';
+    });
   }
 
   #setName(controlEl) {
     if (!controlEl) {
       controlEl = $('name_control');
     }
-    let name = controlEl.GetFieldValue('name');
-    this.controlledFrame.name = name;
+    controlEl.GetFieldValue('name').then(name => {
+      this.controlledFrame.name = name;
+    });
   }
 
   // Property handlers
@@ -1176,7 +1180,7 @@ class ControlledFrameController {
         requestHeaders = JSON.parse(requestHeaders);
         if (requestHeaders && typeof requestHeaders === 'object')
           blockingResponse.requestHeaders = requestHeaders;
-      } catch (e) {}
+      } catch (e) { }
     }
     let responseHeaders = $('#blocking_response_response_headers').value;
     if (responseHeaders.length !== 0) {
@@ -1184,7 +1188,7 @@ class ControlledFrameController {
         responseHeaders = JSON.parse(responseHeaders);
         if (responseHeaders && typeof responseHeaders === 'object')
           blockingResponse.responseHeaders = responseHeaders;
-      } catch (e) {}
+      } catch (e) { }
     }
     return blockingResponse;
   }

@@ -31,7 +31,7 @@ async function addPageControls() {
     let registration = await swRegistrationPromise;
     let updateSWHandler = () => registration.update();
     let updateSWControl = new ControlElement({
-      label: 'Update ServiceWorker',
+      name: 'Update ServiceWorker',
       buttonText: 'Update',
       handler: updateSWHandler,
     });
@@ -39,7 +39,7 @@ async function addPageControls() {
   }
 
   let recreateCFControl = new ControlElement({
-    label: 'Recreate Controlled Frame',
+    name: 'Recreate Controlled Frame',
     buttonText: 'Recreate',
     handler: controller.CreateControlledFrameTag.bind(controller),
   });

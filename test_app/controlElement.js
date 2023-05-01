@@ -73,8 +73,16 @@ export class ControlElement extends LitElement {
 
   constructor(params = {}) {
     super();
-    this.id = params.label + '_control';
-    this.label = params.label;
+    let idPrefix = '';
+    // If params.name is omitted, use the name of the first field for the id.
+    if (params.name === undefined) {
+      if (params.fields.length === 0 || params.fields[0].name === undefined) {
+        throw('ControlElement: Name or field name must be provided.');
+      }
+      idPrefix = params.fields[0].name;
+    }
+    this.id = idPrefix + '_control';
+    this.name = params.name;
     this.fields = params.fields;
     this.buttonText = params.buttonText;
     this.#handler = params.handler;
@@ -89,11 +97,11 @@ export class ControlElement extends LitElement {
 
   renderFields() {
     if (!this.fields) {
-      return html`<label>${this.label}</label>`;
+      return html`<label>${this.name}</label>`;
     }
     let fieldsTemplate = new Array();
-    if (!!this.label) {
-      fieldsTemplate.push(html`<h4>${this.label}</h4>`);
+    if (!!this.name) {
+      fieldsTemplate.push(html`<h4>${this.name}</h4>`);
     }
     for (const field of this.fields) {
       let template = html`
@@ -134,7 +142,7 @@ export class ControlElement extends LitElement {
 
   async GetFieldValue(fieldName) {
     if (!this.renderRoot) {
-      await this.firstUpdated;
+      await this.updateComplete;
     }
     return this.renderRoot.querySelector(`#${fieldName}`).value;
   }
