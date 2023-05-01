@@ -11,6 +11,13 @@ const DEFAULT_ATTRIBUTES = {
   src: 'https://google.com',
 };
 
+function prependHTTPSProtocol(str) {
+  if (!str.startsWith('http://') && !str.startsWith('https://')) {
+    return 'https://' + str;
+  }
+  return str;
+}
+
 function isValidUrl(str) {
   let url;
   try {
@@ -137,7 +144,6 @@ class ControlledFrameController {
   // Initializes the various inputs and buttons that will be used to test the
   // Controlled Frame API.
   #initControlledFrameAPIControls() {
-    this.#addControlledFrameAttributeHandlers();
     this.#addControlledFramePropertyHandlers();
     this.#addControlledFrameMethodHandlers();
     this.#addEventListeners();
@@ -151,29 +157,55 @@ class ControlledFrameController {
     }
   }
 
-  // Adds handler functions for changing the <controlledframe> tag attributes.
-  #addControlledFrameAttributeHandlers() {
-    $('#src_btn').addEventListener('click', this.#setSrc.bind(this));
-    $('#partition_btn').addEventListener(
-      'click',
-      this.#setPartition.bind(this)
-    );
-    $('#allowtransparency_btn').addEventListener(
-      'click',
-      this.#setAllowtransparency.bind(this)
-    );
-    $('#autosize_btn').addEventListener('click', this.#setAutosize.bind(this));
-    $('#name_btn').addEventListener('click', this.#setName.bind(this));
+  #getContentWindowControlGroupElement() {
+    const controls = [
+      new ControlElement({
+        name: 'postMessage(message, targetOrigin)',
+        fields: [
+          { name: 'message', type: 'text' },
+          { name: 'targetOrigin', type: 'text' },
+        ],
+        handler: this.#contentWindowPostMessage.bind(this),
+      }),
+    ];
+    return new ControlGroupElement({
+      heading: 'contentWindow',
+      controls: controls,
+    });
+  }
+
+  #getContextMenusControlGroupElement() {
+    const controls = [];
+
+    // contextMenus.onShow
+    const onShowControlEl = new ControlElement({
+      fields: [
+        {
+          name: 'event.preventDefault()',
+          id: 'preventDefault',
+          type: 'checkbox',
+          value: false,
+        }
+      ],
+      isEventControl: true,
+    });
+    this.controlledFrame.contextMenus.onShow.addListener(
+      this.#contextMenusOnShow.bind(this, onShowControlEl));
+    const onShowGroupEl = new ControlGroupElement({
+      heading: 'onShow',
+      controls: [onShowControlEl],
+    });
+    controls.push(onShowGroupEl);
+
+    return new ControlGroupElement({
+      heading: 'contextMenus',
+      controls: controls
+    });
   }
 
   // Adds handler functions for interacting with various Controlled Frame API
   // properties.
   #addControlledFramePropertyHandlers() {
-    // ContentWindow
-    $('#content_window_post_message_btn').addEventListener(
-      'click',
-      this.#contentWindowPostMessage.bind(this)
-    );
 
     // ContextMenus
     $('#context_menus_create_btn').addEventListener(
@@ -192,6 +224,15 @@ class ControlledFrameController {
       'click',
       this.#contextMenusUpdate.bind(this)
     );
+
+    const propertyControlEl = new ControlGroupElement({
+      heading: 'Tag Properties',
+      controls: [
+        this.#getContentWindowControlGroupElement(),
+        this.#getContextMenusControlGroupElement(),
+      ],
+    });
+    $('#control-div').append(propertyControlEl);
   }
 
   // Adds handler functions for calling the various Controlled Frame API
@@ -268,19 +309,6 @@ class ControlledFrameController {
     $('#user_agent_btn').addEventListener(
       'click',
       this.#setUserAgent.bind(this)
-    );
-  }
-
-  // Add event listeners for context menu events.
-  #addContextMenusEventListeners() {
-    if (typeof this.controlledFrame.contextMenus !== 'object') {
-      Log.warn('contextMenus: Property undefined');
-      return;
-    }
-
-    this.controlledFrame.addEventListener(
-      'contextMenuShow',
-      this.#contextMenusOnShow.bind(this)
     );
   }
 
@@ -391,7 +419,6 @@ class ControlledFrameController {
       this.#onzoomchange.bind(this)
     );
 
-    this.#addContextMenusEventListeners();
     this.#addWebRequestHandlers();
   }
 
@@ -401,7 +428,9 @@ class ControlledFrameController {
       controlEl = $('src_control');
     }
     controlEl.GetFieldValue('src').then(src => {
+      src = prependHTTPSProtocol(src);
       this.NavigateControlledFrame(src);
+      controlEl.UpdateFieldValue('src', src);
     });
   }
 
@@ -442,14 +471,15 @@ class ControlledFrameController {
   }
 
   // Property handlers
-  #contentWindowPostMessage(e) {
+  async #contentWindowPostMessage(controlEl) {
     if (typeof this.controlledFrame.contentWindow !== 'object') {
       Log.warn('contentWindow: property undefined');
       return;
     }
 
-    let message = $('#content_window_post_message_message_in').value;
-    let targetOrigin = $('#content_window_post_message_target_origin_in').value;
+    const message = await controlEl.GetFieldValue('message');
+    let targetOrigin = await controlEl.GetFieldValue('targetOrigin');
+    targetOrigin = prependHTTPSProtocol(targetOrigin);
     if (!isValidUrl(targetOrigin)) {
       Log.err(`${targetOrigin} is not a valid URL`);
       return;
@@ -1018,10 +1048,12 @@ class ControlledFrameController {
     );
   }
 
-  #contextMenusOnShow(e) {
-    Log.evt('contextMenus.onShow fired');
-    if ($('#context_menus_on_show_prevent_default_chk').checked)
-      e.preventDefault();
+  async #contextMenusOnShow(controlEl, event) {
+    const preventDefault = await controlEl.GetFieldValue('preventDefault');
+    if (preventDefault) {
+      event.preventDefault();
+    }
+    Log.evt(`contextMenus.onShow fired, preventDefault = ${preventDefault ? 'true' : 'false'}`);
   }
 
   #setIfValid(object, keyName, keyValue, splitDelimiter = null) {
@@ -1063,12 +1095,6 @@ class ControlledFrameController {
     ).value;
     if (documentUrlPatternsValue.length !== 0) {
       let documentUrlPatterns = documentUrlPatternsValue.split(',');
-      for (const pattern of documentUrlPatterns) {
-        if (!isValidUrl(pattern)) {
-          Log.err(`invalid URL for documentUrlPatterns: ${pattern}`);
-          return;
-        }
-      }
       createProperties.documentUrlPatterns = documentUrlPatterns;
     }
 
@@ -1077,12 +1103,6 @@ class ControlledFrameController {
     ).value;
     if (targetUrlPatternsValue.length !== 0) {
       let targetUrlPatterns = targetUrlPatternsValue.split(',');
-      for (const pattern of targetUrlPatterns) {
-        if (!isValidUrl(pattern)) {
-          Log.err(`invalid URL for targetUrlPatterns: ${pattern}`);
-          return;
-        }
-      }
       createProperties.targetUrlPatterns = targetUrlPatterns;
     }
 
@@ -1172,6 +1192,7 @@ class ControlledFrameController {
       blockingResponse.authCredentials.username = username;
     blockingResponse.cancel = $('#blocking_response_cancel').checked;
     let redirectUrl = $('#blocking_response_redirect_url').value;
+    redirectUrl = prependHTTPSProtocol(redirectUrl);
     if (redirectUrl !== 0 && isValidUrl(redirectUrl))
       blockingResponse.redirectUrl = redirectUrl;
     let requestHeaders = $('#blocking_response_request_headers').value;
