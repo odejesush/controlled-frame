@@ -22,6 +22,8 @@ let controller = null;
 async function init() {
   controller = new ControlledFrameController();
   await addPageControls();
+  $('#expand_btn').addEventListener('click', expandAllControls.bind(this, true));
+  $('#collapse_btn').addEventListener('click', expandAllControls.bind(this, false));
 }
 
 async function addPageControls() {
@@ -45,4 +47,11 @@ async function addPageControls() {
   });
   controlGroupElement.AddControl(recreateCFControl);
   $('#control-div').prepend(controlGroupElement);
+}
+
+function expandAllControls(expanded) {
+  const groups = document.querySelectorAll('control-group-element');
+  for (const group of groups) {
+    group.SetExpanded(expanded);
+  }
 }

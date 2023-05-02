@@ -121,21 +121,48 @@ export class ControlElement extends LitElement {
     }
   }
 
+  renderField(field) {
+    const id = field.id !== undefined ? field.id : field.name;
+    let template = [
+      html`<label for=${field.name}>${field.name}</label>`,
+    ];
+    // TODO: Add a custom element where multiple text boxes can be added for
+    // APIs such as ContextMenusCreateProperties.documentUrlPatterns.
+    // https://developer.chrome.com/docs/extensions/reference/webviewTag/#type-ContextMenuUpdateProperties
+    switch (field.type) {
+      case 'checkbox':
+        template.push(html`
+          <input id=${id} type=${field.type} ?checked=${field.checked} /> `);
+        break;
+      case 'select':
+        template.push(html`
+          <select id=${id} ?multiple=${field.multiple}>
+            ${field.options.map(option =>
+          html`<option value=${option}>${option}</option>`
+        )}</select>`);
+        break;
+      case 'div':
+        template.push(html`<div id=${id}></div>`);
+        break;
+      default:
+        template.push(html`
+          <input id=${id} type=${field.type}
+              value=${field.value ? field.value : ''} /> `);
+        break;
+    }
+    return template;
+  }
+
   renderFields() {
     let fieldsTemplate = new Array();
     for (const field of this.fields) {
-      const id = field.id !== undefined ? field.id : field.name;
-      let template = html`
-        <label for=${field.name}>${field.name}</label>
-        <input id=${id} type=${field.type} value=${field.value ? field.value : ''} />
-      `;
-      fieldsTemplate.push(template);
+      fieldsTemplate.push(...this.renderField(field));
     }
     return fieldsTemplate;
   }
 
   maybeRenderButton() {
-    if (this.isEventControl) {
+    if (this.isEventControl || !this.#handler) {
       return html``;
     }
 
@@ -169,12 +196,32 @@ export class ControlElement extends LitElement {
       await this.updateComplete;
     }
     const field = this.renderRoot.querySelector(`#${fieldName}`);
-    return field.type === 'checkbox' ? field.checked : field.value;
+    switch (field.type) {
+      case 'checkbox':
+        return field.checked;
+      case 'select-multiple':
+        return field.options;
+      default:
+        return field.value;
+    }
   }
 
   UpdateFieldValue(fieldName, value) {
     const updateValue = () => {
-      this.renderRoot.querySelector(`#${fieldName}`).value = value;
+      const field = this.renderRoot.querySelector(`#${fieldName}`);
+      switch (field.type) {
+        case 'checkbox':
+          field.checked = value;
+          return;
+        case 'div':
+          field.innerText = value;
+          return;
+        case 'select':
+          // TODO if needed.
+          return;
+        default:
+          field.value = value;
+      }
     };
     if (!this.renderRoot) {
       this.updateComplete.then(updateValue);

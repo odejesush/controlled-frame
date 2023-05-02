@@ -65,7 +65,7 @@ export class ControlGroupElement extends LitElement {
     titleClasses[`depth${this.depth}`] = true;
     return html`
       <div class=${classMap(titleClasses)} @click="${this.#toggleCollapseGroup}">
-        ${this.expanded ? html`[+]` : html`[-]`} ${this.heading}
+        ${this.expanded ? html`[-]` : html`[+]`} ${this.heading}
       </div>
       <div id="controls" class=${classMap(controlsClasses)}>
         ${this.controls.map(control => {
@@ -89,6 +89,10 @@ export class ControlGroupElement extends LitElement {
 
   #toggleCollapseGroup() {
     this.expanded = !this.expanded;
+  }
+
+  SetExpanded(expanded) {
+    this.expanded = expanded;
   }
 
   controls;

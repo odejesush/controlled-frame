@@ -105,12 +105,12 @@ class ControlledFrameController {
   #initControlledFrameAttributes() {
     let controls = [
       new ControlElement({
-        fields: [{ name: 'allowtransparency', type: 'checkbox', value: DEFAULT_ATTRIBUTES.allowtransparency }],
+        fields: [{ name: 'allowtransparency', type: 'checkbox', checked: DEFAULT_ATTRIBUTES.allowtransparency }],
         buttonText: 'Set',
         handler: this.#setAllowtransparency.bind(this)
       }),
       new ControlElement({
-        fields: [{ name: 'autosize', type: 'checkbox', value: DEFAULT_ATTRIBUTES.autosize }],
+        fields: [{ name: 'autosize', type: 'checkbox', checked: DEFAULT_ATTRIBUTES.autosize }],
         buttonText: 'Set',
         handler: this.#setAutosize.bind(this)
       }),
@@ -184,7 +184,7 @@ class ControlledFrameController {
           name: 'event.preventDefault()',
           id: 'preventDefault',
           type: 'checkbox',
-          value: false,
+          checked: false,
         }
       ],
       isEventControl: true,
@@ -197,6 +197,45 @@ class ControlledFrameController {
     });
     controls.push(onShowGroupEl);
 
+    // ContextMenusCreateProperties fields
+    const createPropertiesEl = new ControlElement({
+      fields: [
+        { name: 'checked', type: 'checkbox', checked: false },
+        {
+          name: 'contexts', type: 'select', multiple: true,
+          options: ['all', 'page', 'frame', 'selection', 'link', 'editable',
+            'image', 'video', 'audio'],
+        },
+        { name: 'documentUrlPatterns', type: 'text' },
+        { name: 'enabled', type: 'checkbox', checked: false },
+        { name: 'id', type: 'text' },
+        { name: 'parentId', type: 'text' },
+        { name: 'targetUrlPatterns', type: 'text' },
+        { name: 'title', type: 'text' },
+        {
+          name: 'type', type: 'select',
+          options: ['normal', 'checkbox', 'radio', 'separator']
+        },
+        { name: 'onClick(info)', type: 'div', id: 'result' },
+      ],
+    });
+    const createPropertiesGroupEl = new ControlGroupElement({
+      heading: 'ContextMenusCreateProperties properties',
+      controls: [createPropertiesEl],
+    });
+    controls.push(createPropertiesGroupEl);
+
+    // contextMenus.create
+    const createEl = new ControlElement({
+      fields: [{ name: 'create(createProperties)', type: 'div', id: 'result' }],
+      handler: this.#contextMenusCreate.bind(this, createPropertiesEl),
+    });
+    const createGroupEl = new ControlGroupElement({
+      heading: 'ContextMenusCreateProperties properties',
+      controls: [createEl],
+    });
+    controls.push(createGroupEl);
+
     return new ControlGroupElement({
       heading: 'contextMenus',
       controls: controls
@@ -208,10 +247,6 @@ class ControlledFrameController {
   #addControlledFramePropertyHandlers() {
 
     // ContextMenus
-    $('#context_menus_create_btn').addEventListener(
-      'click',
-      this.#contextMenusCreate.bind(this)
-    );
     $('#context_menus_remove_btn').addEventListener(
       'click',
       this.#contextMenusRemove.bind(this)
@@ -1067,7 +1102,7 @@ class ControlledFrameController {
     object[keyName] = keyValue;
   }
 
-  #readContextMenusCreateProperties() {
+  async #readContextMenusCreateProperties(createPropertiesEl, controlEl) {
     let contexts = new Array();
     for (const option of $('#context_menus_create_properties_contexts_in')
       .options) {
@@ -1080,7 +1115,7 @@ class ControlledFrameController {
       onclick: info => {
         let infoJSON = JSON.stringify(info);
         Log.info(`context menu item clicked: ${infoJSON}`);
-        $('#context_menus_on_click_result').innerText = infoJSON;
+        createPropertiesEl.UpdateFieldValue('result', infoJSON);
       },
     };
 
@@ -1098,9 +1133,8 @@ class ControlledFrameController {
       createProperties.documentUrlPatterns = documentUrlPatterns;
     }
 
-    let targetUrlPatternsValue = $(
-      '#context_menus_create_properties_target_url_patterns_in'
-    ).value;
+    let targetUrlPatternsValue =
+      await createPropertiesEl.GetFieldValue('targetUrlPatterns');
     if (targetUrlPatternsValue.length !== 0) {
       let targetUrlPatterns = targetUrlPatternsValue.split(',');
       createProperties.targetUrlPatterns = targetUrlPatterns;
@@ -1109,7 +1143,7 @@ class ControlledFrameController {
     return createProperties;
   }
 
-  #contextMenusCreate(e) {
+  async #contextMenusCreate(createPropertiesEl, controlEl) {
     if (
       typeof this.controlledFrame.contextMenus !== 'object' ||
       typeof this.controlledFrame.contextMenus.create !== 'function'
@@ -1117,8 +1151,9 @@ class ControlledFrameController {
       Log.warn('contextMenus.create: API undefined');
       return;
     }
-    let createProperties = this.#readContextMenusCreateProperties();
-    let callback = () => {
+    const createProperties = await this.#readContextMenusCreateProperties(
+      createPropertiesEl, controlEl);
+    const callback = () => {
       Log.info(`contextMenus.create callback called`);
     };
     let contextMenuID = this.controlledFrame.contextMenus.create(
@@ -1126,7 +1161,7 @@ class ControlledFrameController {
       callback
     );
     Log.info(`contextMenus.create = ${contextMenuID}`);
-    $('#context_menus_create_result').innerText = `id = ${contextMenuID}`;
+    await controlEl.UpdateFieldValue('result', `id = ${contextMenuID}`);
   }
 
   #contextMenusRemove(e) {
