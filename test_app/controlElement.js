@@ -34,7 +34,7 @@ export class ControlElement extends LitElement {
   static styles = css`
     :host {
       display: grid;
-      grid-template-columns: [label] 10em [field] auto [button] 80px;
+      grid-template-columns: [label] 11em [field] auto [button] 6em;
       column-gap: 0.5em;
       row-gap: 0.5em;
       padding: 0;

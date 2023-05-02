@@ -144,7 +144,17 @@ class ControlledFrameController {
   // Initializes the various inputs and buttons that will be used to test the
   // Controlled Frame API.
   #initControlledFrameAPIControls() {
-    this.#addControlledFramePropertyHandlers();
+    // Adds controls for interacting with various Controlled Frame API
+    // properties.
+    const propertyControlEl = new ControlGroupElement({
+      heading: 'Tag Properties',
+      controls: [
+        this.#getContentWindowControlGroupElement(),
+        this.#getContextMenusControlGroupElement(),
+      ],
+    });
+    $('#control-div').append(propertyControlEl);
+
     this.#addControlledFrameMethodHandlers();
     this.#addEventListeners();
     this.RefreshState();
@@ -227,47 +237,48 @@ class ControlledFrameController {
 
     // contextMenus.create
     const createEl = new ControlElement({
-      fields: [{ name: 'create(createProperties)', type: 'div', id: 'result' }],
+      fields: [{ name: 'create(properties)', type: 'div', id: 'result' }],
       handler: this.#contextMenusCreate.bind(this, createPropertiesEl),
     });
     const createGroupEl = new ControlGroupElement({
-      heading: 'ContextMenusCreateProperties properties',
+      heading: 'create',
       controls: [createEl],
     });
     controls.push(createGroupEl);
+
+    // contextMenus.update
+    const updateEl = new ControlElement({
+      fields: [
+        { name: 'id', type: 'text' },
+        { name: 'update(id, properties)', type: 'div', id: 'result' },
+      ],
+      handler: this.#contextMenusUpdate.bind(this, createPropertiesEl),
+    });
+    const updateGroupEl = new ControlGroupElement({
+      heading: 'update',
+      controls: [updateEl],
+    });
+    controls.push(updateGroupEl);
+
+    // contextMenus.remove and contextMenus.removeAll
+    const removeEl = new ControlElement({
+      fields: [{ name: 'remove(menuItemId)', type: 'text', id: 'menuItemId' }],
+      handler: this.#contextMenusRemove.bind(this),
+    });
+    const removeAllEl = new ControlElement({
+      name: 'removeAll()',
+      handler: this.#contextMenusRemoveAll.bind(this),
+    });
+    const removeGroupEl = new ControlGroupElement({
+      heading: 'remove',
+      controls: [removeEl, removeAllEl],
+    });
+    controls.push(removeGroupEl);
 
     return new ControlGroupElement({
       heading: 'contextMenus',
       controls: controls
     });
-  }
-
-  // Adds handler functions for interacting with various Controlled Frame API
-  // properties.
-  #addControlledFramePropertyHandlers() {
-
-    // ContextMenus
-    $('#context_menus_remove_btn').addEventListener(
-      'click',
-      this.#contextMenusRemove.bind(this)
-    );
-    $('#context_menus_remove_all_btn').addEventListener(
-      'click',
-      this.#contextMenusRemoveAll.bind(this)
-    );
-    $('#context_menus_update_btn').addEventListener(
-      'click',
-      this.#contextMenusUpdate.bind(this)
-    );
-
-    const propertyControlEl = new ControlGroupElement({
-      heading: 'Tag Properties',
-      controls: [
-        this.#getContentWindowControlGroupElement(),
-        this.#getContextMenusControlGroupElement(),
-      ],
-    });
-    $('#control-div').append(propertyControlEl);
   }
 
   // Adds handler functions for calling the various Controlled Frame API
@@ -1164,37 +1175,38 @@ class ControlledFrameController {
     await controlEl.UpdateFieldValue('result', `id = ${contextMenuID}`);
   }
 
-  #contextMenusRemove(e) {
+  async #contextMenusRemove(controlEl) {
     if (typeof this.controlledFrame.contextMenus.remove !== 'function') {
       Log.warn('contextMenus.remove: API undefined');
       return;
     }
 
-    let menuItemId = $('#context_menus_remove_in').value;
-    let callback = () => {
+    const menuItemId = await controlEl.GetFieldValue('menuItemId');
+    const callback = () => {
       Log.info(`contextMenus.remove(${menuItemId}) completed`);
     };
     this.controlledFrame.contextMenus.remove(menuItemId, callback);
   }
 
-  #contextMenusRemoveAll(e) {
+  async #contextMenusRemoveAll(controlEl) {
     if (typeof this.controlledFrame.contextMenus.removeAll !== 'function') {
       Log.warn('contextMenus.removeAll: API undefined');
       return;
     }
-    let callback = () => {
+    const callback = () => {
       Log.info('contextMenus.removeAll completed');
     };
     this.controlledFrame.contextMenus.removeAll(callback);
   }
 
-  #contextMenusUpdate(e) {
+  async #contextMenusUpdate(createPropertiesEl, controlEl) {
     if (typeof this.controlledFrame.contextMenus.update !== 'function') {
       Log.warn('contextMenus.update: API undefined');
       return;
     }
-    let id = $('#context_menus_update_in').value;
-    let updateProperties = this.#readContextMenusCreateProperties();
+    const id = await controlEl.GetFieldValue('id');
+    const updateProperties =
+      await this.#readContextMenusCreateProperties(createPropertiesEl, controlEl);
     let callback = () => {
       Log.info(`contextMenus.update(${id}) completed`);
     };

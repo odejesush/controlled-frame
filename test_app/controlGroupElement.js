@@ -51,7 +51,7 @@ export class ControlGroupElement extends LitElement {
     super();
     this.heading = params.heading;
     this.depth = 0;
-    this.controls = params.controls ? params.controls : new Array();
+    this.#controls = params.controls ? params.controls : new Array();
     if (params.expanded !== undefined) {
       this.expanded = params.expanded;
     } else {
@@ -68,7 +68,7 @@ export class ControlGroupElement extends LitElement {
         ${this.expanded ? html`[-]` : html`[+]`} ${this.heading}
       </div>
       <div id="controls" class=${classMap(controlsClasses)}>
-        ${this.controls.map(control => {
+        ${this.#controls.map(control => {
           if (control instanceof ControlGroupElement) {
             control.SetGroupDepth(this.depth + 1);
           }
@@ -80,7 +80,7 @@ export class ControlGroupElement extends LitElement {
   }
 
   AddControl(control) {
-    this.controls.push(control);
+    this.#controls.push(control);
   }
 
   SetGroupDepth(depth) {
@@ -92,10 +92,15 @@ export class ControlGroupElement extends LitElement {
   }
 
   SetExpanded(expanded) {
+    for (const control of this.#controls) {
+      if (control instanceof ControlGroupElement) {
+        control.SetExpanded(expanded);
+      }
+    }
     this.expanded = expanded;
   }
 
-  controls;
+  #controls;
 }
 
 customElements.define('control-group-element', ControlGroupElement);
