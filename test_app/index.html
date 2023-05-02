@@ -34,8 +34,10 @@
 
       <div class="view-controls">
         <h2>Controls</h2>
-        <button id="expand_btn">Expand All</button>
-        <button id="collapse_btn">Collapse All</button>
+        <div>
+          <button id="expand_btn">Expand All</button>
+          <button id="collapse_btn">Collapse All</button>
+        </div>
         <div id="control-div"></div>
 
         <div class="controls">
@@ -233,27 +235,6 @@
           <!-- Navigation controls -->
           <div class="subcontrols">
             <h4>Navigation</h4>
-            <label for="can_go_back_chk">canGoBack()</label>
-            <div class="checkbox"><input type="checkbox" id="can_go_back_chk" /></div>
-
-            <label for="back_btn">back()</label>
-            <button id="back_btn">Back</button>
-
-            <label for="can_go_forward_chk">canGoForward()</label>
-            <div class="checkbox"><input type="checkbox" id="can_go_forward_chk" /></div>
-
-            <label for="forward_btn">forward()</label>
-            <button id="forward_btn">Forward</button>
-
-            <label for="go_in">go()</label>
-            <input type="number" id="go_in" value=0 />
-            <button id="go_btn">Go</button>
-
-            <label for="reload_btn">reload()</label>
-            <button id="reload_btn">Reload</button>
-
-            <label for="stop_btn">stop()</label>
-            <button id="stop_btn">Stop</button>
 
             <label for="print_btn">print()</label>
             <button id="print_btn">Print</button>
@@ -261,9 +242,6 @@
             <label for="get_process_id_result">getProcessId()</label>
             <div id="get_process_id_result"></div>
             <button id="get_process_id_btn">Get Process ID</button>
-
-            <label for="terminate_btn">terminate()</label>
-            <button id="terminate_btn">Terminate</button>
           </div>
 
           <!-- Capture Visible Region controls -->

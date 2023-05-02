@@ -33,6 +33,7 @@ class ControlledFrameController {
   constructor() {
     this.#urlParams = new URLSearchParams(window.location.search);
     this.controlledFrame = $('#view');
+    this.controlGroups = new Array();
     this.CreateControlledFrameTag();
   }
 
@@ -53,10 +54,6 @@ class ControlledFrameController {
     this.#initControlledFrameAPIControls();
   }
 
-  SetAttribute(name, value) {
-    this.controlledFrame[name] = value;
-  }
-
   NavigateControlledFrame(url) {
     if (!isValidUrl(url)) {
       Log.err(`Invalid URL for src: ${url}`);
@@ -68,8 +65,11 @@ class ControlledFrameController {
   // Fetches the current state of the Controlled Frame API and displays the
   // values in their respective input fields.
   RefreshState() {
-    this.#canGoBack();
-    this.#canGoForward();
+    for (const group of this.controlGroups) {
+      if (group !== undefined && group.RefreshState !== undefined) {
+        group.RefreshState();
+      }
+    }
     this.#getUserAgent();
     this.#getAudioState();
     this.#getProcessId();
@@ -103,37 +103,63 @@ class ControlledFrameController {
 
   // Initializes the <controlledframe> tag attributes with default values.
   #initControlledFrameAttributes() {
-    let controls = [
+    const controls = [
       new ControlElement({
-        fields: [{ name: 'allowtransparency', type: 'checkbox', checked: DEFAULT_ATTRIBUTES.allowtransparency }],
+        fields: [{
+          name: 'allowtransparency',
+          type: 'checkbox',
+          checked: DEFAULT_ATTRIBUTES.allowtransparency,
+          refreshValue: () => this.controlledFrame.allowtransparency
+        }],
         buttonText: 'Set',
         handler: this.#setAllowtransparency.bind(this)
       }),
       new ControlElement({
-        fields: [{ name: 'autosize', type: 'checkbox', checked: DEFAULT_ATTRIBUTES.autosize }],
+        fields: [{
+          name: 'autosize',
+          type: 'checkbox',
+          checked: DEFAULT_ATTRIBUTES.autosize,
+          refreshValue: () => this.controlledFrame.autosize
+        }],
         buttonText: 'Set',
         handler: this.#setAutosize.bind(this)
       }),
       new ControlElement({
-        fields: [{ name: 'name', type: 'text', value: DEFAULT_ATTRIBUTES.name }],
+        fields: [{
+          name: 'name',
+          type: 'text',
+          value: DEFAULT_ATTRIBUTES.name,
+          refreshValue: () => this.controlledFrame.name
+        }],
         buttonText: 'Set',
         handler: this.#setName.bind(this)
       }),
       new ControlElement({
-        fields: [{ name: 'partition', type: 'text', value: DEFAULT_ATTRIBUTES.partition }],
+        fields: [{
+          name: 'partition',
+          type: 'text',
+          value: DEFAULT_ATTRIBUTES.partition,
+          refreshValue: () => this.controlledFrame.partition
+        }],
         buttonText: 'Set',
         handler: this.#setPartition.bind(this)
       }),
       new ControlElement({
-        fields: [{ name: 'src', type: 'text', value: DEFAULT_ATTRIBUTES.src }],
+        fields: [{
+          name: 'src',
+          type: 'text',
+          value: DEFAULT_ATTRIBUTES.src,
+          refreshValue: () => this.controlledFrame.src
+        }],
         buttonText: 'Set',
         handler: this.#setSrc.bind(this)
       }),
     ];
-    let controlGroupElement = new ControlGroupElement({
+    const controlGroupElement = new ControlGroupElement({
       heading: 'Tag Attributes',
       controls: controls
     });
+    this.controlGroups.push(controlGroupElement);
     $('#control-div').append(controlGroupElement)
 
     for (const control of controls) {
@@ -153,11 +179,20 @@ class ControlledFrameController {
         this.#getContextMenusControlGroupElement(),
       ],
     });
+    this.controlGroups.push(propertyControlEl);
     $('#control-div').append(propertyControlEl);
+
+    const methodControlEl = new ControlGroupElement({
+      heading: 'Tag Methods',
+      controls: [
+        this.#getMethodControlGroupElement(),
+      ]
+    });
+    this.controlGroups.push(methodControlEl);
+    $('#control-div').append(methodControlEl);
 
     this.#addControlledFrameMethodHandlers();
     this.#addEventListeners();
-    this.RefreshState();
 
     // Allow text areas to expand to fit text.
     let textareas = document.getElementsByTagName('textarea');
@@ -281,6 +316,68 @@ class ControlledFrameController {
     });
   }
 
+  #getMethodControlGroupElement() {
+    // Navigation method controls
+    const canGoBackControl = new ControlElement({
+      fields: [{
+        name: 'canGoBack()',
+        id: 'canGoBack',
+        type: 'checkbox',
+        checked: this.#canGoBack(),
+        disabled: true,
+        refreshValue: this.#canGoBack.bind(this),
+      }],
+    });
+    const canGoForwardControl = new ControlElement({
+      fields: [{
+        name: 'canGoForward()',
+        id: 'canGoForward',
+        type: 'checkbox',
+        checked: this.controlledFrame.canGoForward(),
+        disabled: true,
+        refreshValue: this.#canGoForward.bind(this),
+      }],
+    });
+    const backControl = new ControlElement({
+      name: 'back()',
+      handler: this.#back.bind(this, canGoBackControl),
+    });
+    const forwardControl = new ControlElement({
+      name: 'forward()',
+      handler: this.#forward.bind(this, canGoForwardControl),
+    });
+    const goControl = new ControlElement({
+      fields: [{ name: 'go()', id: 'go', type: 'number', value: 0 }],
+      handler: this.#go.bind(this, canGoBackControl, canGoForwardControl),
+    });
+    const reloadControl = new ControlElement({
+      name: 'reload()',
+      handler: this.#reload.bind(this),
+    });
+    const stopControl = new ControlElement({
+      name: 'stop()',
+      handler: this.#stop.bind(this),
+    });
+    const terminateControl = new ControlElement({
+      name: 'terminate()',
+      handler: this.#terminate.bind(this),
+    });
+    const navigationGroupEl = new ControlGroupElement({
+      heading: 'Navigation',
+      controls: [
+        canGoBackControl,
+        canGoForwardControl,
+        backControl,
+        forwardControl,
+        goControl,
+        reloadControl,
+        stopControl,
+        terminateControl,
+      ],
+    });
+    return navigationGroupEl;
+  }
+
   // Adds handler functions for calling the various Controlled Frame API
   // methods.
   #addControlledFrameMethodHandlers() {
@@ -288,7 +385,6 @@ class ControlledFrameController {
       'click',
       this.#addContentScripts.bind(this)
     );
-    $('#back_btn').addEventListener('click', this.#back.bind(this));
     $('#capture_visible_region_btn').addEventListener(
       'click',
       this.#captureVisibleRegion.bind(this)
@@ -299,7 +395,6 @@ class ControlledFrameController {
       this.#executeScript.bind(this)
     );
     $('#find_btn').addEventListener('click', this.#find.bind(this));
-    $('#forward_btn').addEventListener('click', this.#forward.bind(this));
     $('#get_audio_state_btn').addEventListener(
       'click',
       this.#getAudioState.bind(this)
@@ -313,7 +408,6 @@ class ControlledFrameController {
       'click',
       this.#getZoomMode.bind(this)
     );
-    $('#go_btn').addEventListener('click', this.#go.bind(this));
     $('#insert_css_btn').addEventListener('click', this.#insertCSS.bind(this));
     $('#is_audio_muted_btn').addEventListener(
       'click',
@@ -328,7 +422,6 @@ class ControlledFrameController {
       this.#loadDataWithBaseUrl.bind(this)
     );
     $('#print_btn').addEventListener('click', this.#print.bind(this));
-    $('#reload_btn').addEventListener('click', this.#reload.bind(this));
     $('#remove_content_scripts_btn').addEventListener(
       'click',
       this.#removeContentScripts.bind(this)
@@ -346,12 +439,10 @@ class ControlledFrameController {
       'click',
       this.#setZoomMode.bind(this)
     );
-    $('#stop_btn').addEventListener('click', this.#stop.bind(this));
     $('#stop_finding_btn').addEventListener(
       'click',
       this.#stopFinding.bind(this)
     );
-    $('#terminate_btn').addEventListener('click', this.#terminate.bind(this));
     $('#user_agent_btn').addEventListener(
       'click',
       this.#setUserAgent.bind(this)
@@ -590,7 +681,7 @@ class ControlledFrameController {
   }
 
   // Navigation related functions
-  #back(e) {
+  async #back(canGoBackControl, controlEl) {
     if (typeof this.controlledFrame.back !== 'function') {
       Log.warn('back: API undefined');
       return;
@@ -598,20 +689,21 @@ class ControlledFrameController {
     this.controlledFrame.back(success => {
       let successStr = success ? 'successful' : 'unsuccessful';
       Log.info(`back = ${successStr}`);
+      canGoBackControl.UpdateFieldValue('canGoBack', this.#canGoBack());
     });
   }
 
-  #canGoBack(e) {
+  #canGoBack() {
     if (typeof this.controlledFrame.canGoBack !== 'function') {
       Log.warn('canGoBack: API undefined');
-      return;
+      return false;
     }
     let canGoBack = this.controlledFrame.canGoBack();
-    $('#can_go_back_chk').checked = canGoBack;
     Log.info(`canGoBack = ${canGoBack}`);
+    return canGoBack;
   }
 
-  #forward(e) {
+  async #forward(canGoForwardControl, controlEl) {
     if (typeof this.controlledFrame.forward !== 'function') {
       Log.warn('forward: API undefined');
       return;
@@ -619,27 +711,32 @@ class ControlledFrameController {
     this.controlledFrame.forward(success => {
       let successStr = success ? 'successful' : 'unsuccessful';
       Log.info(`forward = ${successStr}`);
+      canGoForwardControl.UpdateFieldValue('canGoForward', this.#canGoForward());
     });
   }
 
-  #canGoForward(e) {
+  #canGoForward() {
     if (typeof this.controlledFrame.canGoForward !== 'function') {
       Log.warn('canGoForward: API undefined');
-      return;
+      return false;
     }
     let canGoForward = this.controlledFrame.canGoForward();
-    $('#can_go_forward_chk').checked = canGoForward;
     Log.info(`canGoForward = ${canGoForward}`);
+    return canGoForward;
   }
 
-  #go(e) {
+  async #go(canGoBackControl, canGoForwardControl, controlEl) {
     if (typeof this.controlledFrame.go !== 'function') {
       Log.warn('go: API undefined');
       return;
     }
-    let num = parseInt($('#go_in').value);
+    const value = await controlEl.GetFieldValue('go');
+    const num = parseInt(value);
     this.controlledFrame.go(num, success => {
-      Log.info(`go = ${success}`);
+      let successStr = success ? 'successful' : 'unsuccessful';
+      Log.info(`go = ${successStr}`);
+      canGoBackControl.UpdateFieldValue('canGoBack', this.#canGoBack());
+      canGoForwardControl.UpdateFieldValue('canGoForward', this.#canGoForward());
     });
   }
 
@@ -980,7 +1077,7 @@ class ControlledFrameController {
     Log.info(`stopFinding(${action}) completed`);
   }
 
-  #terminate(e) {
+  async #terminate(controlEl) {
     if (typeof this.controlledFrame.terminate !== 'function') {
       Log.warn('terminate: API undefined');
       return;
@@ -1488,6 +1585,7 @@ class ControlledFrameController {
   }
 
   static controlledFrame;
+  static controlGroups = new Array();
   #addedContentScripts = new Array();
   #urlParams;
 }

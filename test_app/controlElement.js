@@ -132,11 +132,11 @@ export class ControlElement extends LitElement {
     switch (field.type) {
       case 'checkbox':
         template.push(html`
-          <input id=${id} type=${field.type} ?checked=${field.checked} /> `);
+          <input id=${id} type=${field.type} ?checked=${field.checked} ?disabled=${field.disabled} /> `);
         break;
       case 'select':
         template.push(html`
-          <select id=${id} ?multiple=${field.multiple}>
+          <select id=${id} ?multiple=${field.multiple} ?disabled=${field.disabled}>
             ${field.options.map(option =>
           html`<option value=${option}>${option}</option>`
         )}</select>`);
@@ -147,7 +147,7 @@ export class ControlElement extends LitElement {
       default:
         template.push(html`
           <input id=${id} type=${field.type}
-              value=${field.value ? field.value : ''} /> `);
+              value=${field.value ? field.value : ''} ?disabled=${field.disabled} /> `);
         break;
     }
     return template;
@@ -233,8 +233,26 @@ export class ControlElement extends LitElement {
   SetButtonHandler(handler) {
     this.#handler = handler;
   }
-  Submit() {
+  async Submit() {
+    await this.updateComplete;
     this.#handler(this);
+  }
+
+  // For each field, this updates the value displayed in the field.
+  RefreshState() {
+    for (const field of this.fields) {
+      if (field.refreshValue !== undefined && field.refreshValue !== null) {
+        if (typeof field.refreshValue !== 'function') {
+          continue;
+        }
+        const newValue = field.refreshValue();
+        if (newValue !== null) {
+          const id = field.id !== undefined ? field.id : field.name;
+          this.UpdateFieldValue(id, newValue);
+        }
+      }
+    }
+    this.requestUpdate();
   }
 
   #handler = null;

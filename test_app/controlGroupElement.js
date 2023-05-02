@@ -10,6 +10,11 @@ export class ControlGroupElement extends LitElement {
     :host {
       display: block;
       width: 100%;
+      /* border-top: 1px solid darkblue;
+      border-bottom: 1px solid darkblue; */
+      border-left: 1px solid darkblue;
+      /* margin-left: 0.5em; */
+      padding-left: 0.5em;
     }
 
     .title {
@@ -38,7 +43,6 @@ export class ControlGroupElement extends LitElement {
     }
 
     .controls {
-      border-bottom: 1px solid darkblue;
       padding: 0;
     }
 
@@ -98,6 +102,15 @@ export class ControlGroupElement extends LitElement {
       }
     }
     this.expanded = expanded;
+  }
+
+  // Iterates over all of the controls and refreshes their state. Controls that
+  // display properties of the Controlled Frame API, such as canGoBack(), are
+  // updated to reflect their current state.
+  RefreshState() {
+    for (const control of this.#controls) {
+      control.RefreshState();
+    }
   }
 
   #controls;
