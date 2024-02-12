@@ -10,7 +10,8 @@ body {
   background-color: #eeeeff;
   font-family: sans-serif;
   margin: 0px;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
 }
 
 /**
@@ -18,9 +19,8 @@ body {
  */
 #view_container {
   margin: auto;
-  height: 800px;
-  min-height: 400px;
-  max-width: 1000px;
+  height: 45vh;
+    width: 45vw;
   /* border: 2px solid #99cccc; */
   border: 2px solid darkblue;
   position: sticky;
@@ -31,7 +31,7 @@ body {
   font-family: monospace;
   overflow: scroll;
   overflow-wrap: break-word;
-  height: 200px;
+  height: 30vh;
 }
 
 /**
@@ -50,6 +50,8 @@ body {
 
 .view-controls {
   grid-column: 3 / span 1;
+  width: 45vw;
+  margin: auto;
 }
 
 .log {
